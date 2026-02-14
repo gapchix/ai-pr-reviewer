@@ -15,6 +15,7 @@ export interface PRFile {
   deletions: number;
   changes: number;
   patch?: string;
+  validLines?: number[];
 }
 
 export interface ReviewComment {

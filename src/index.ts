@@ -22,7 +22,7 @@ async function main() {
       `📋 Fetching PR #${options.prNumber} from ${options.repository}...`,
     );
 
-    const report = await reviewService.reviewPullRequest(
+    const { report, prDetails } = await reviewService.reviewPullRequest(
       owner,
       repo,
       options.prNumber,
@@ -45,7 +45,7 @@ async function main() {
 
       case "github": {
         const formatter = new GitHubFormatter(githubService);
-        await formatter.format(report);
+        await formatter.format(report, prDetails);
         break;
       }
 

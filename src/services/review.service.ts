@@ -1,6 +1,6 @@
 import { GitHubService } from "./github.service";
 import { OpenAIService } from "./openai.service";
-import { ReviewReport } from "../types";
+import { ReviewReport, PRDetails } from "../types";
 
 export class ReviewService {
   constructor(
@@ -12,7 +12,7 @@ export class ReviewService {
     owner: string,
     repo: string,
     prNumber: number,
-  ): Promise<ReviewReport> {
+  ): Promise<{ report: ReviewReport; prDetails: PRDetails }> {
     const prDetails = await this.githubService.getPRDetails(
       owner,
       repo,
@@ -31,6 +31,6 @@ export class ReviewService {
       good: review.good,
     };
 
-    return report;
+    return { report, prDetails };
   }
 }

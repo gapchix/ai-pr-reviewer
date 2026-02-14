@@ -1,10 +1,10 @@
 import { GitHubService } from "../services";
-import { ReviewReport } from "../types";
+import { ReviewReport, PRDetails } from "../types";
 
 export class GitHubFormatter {
   constructor(private githubService: GitHubService) {}
 
-  async format(report: ReviewReport): Promise<void> {
+  async format(report: ReviewReport, prDetails: PRDetails): Promise<void> {
     const [owner, repo] = report.repository.split("/");
 
     const summaryComment = this.buildSummaryComment(report);
@@ -39,10 +39,11 @@ export class GitHubFormatter {
         repo,
         report.prNumber,
         allComments,
+        prDetails,
       );
     }
 
-    console.log("Review comments posted to GitHub PR");
+    console.log("✓ Review comments posted to GitHub PR");
   }
 
   private buildSummaryComment(report: ReviewReport): string {
