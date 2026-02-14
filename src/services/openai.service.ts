@@ -1,5 +1,5 @@
-import OpenAI from 'openai';
-import { PRDetails, ReviewComment } from '../types';
+import OpenAI from "openai";
+import { PRDetails, ReviewComment } from "../types";
 
 export class OpenAIService {
   private client: OpenAI;
@@ -18,21 +18,22 @@ export class OpenAIService {
     const prompt = this.buildReviewPrompt(prDetails);
 
     const response = await this.client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
       messages: [
         {
-          role: 'system',
-          content: 'You are a senior software engineer conducting a thorough code review. Focus on identifying critical issues, potential bugs, and highlighting good practices.',
+          role: "system",
+          content:
+            "You are a senior software engineer conducting a thorough code review. Focus on identifying critical issues, potential bugs, and highlighting good practices.",
         },
         {
-          role: 'user',
+          role: "user",
           content: prompt,
         },
       ],
       temperature: 0.2,
     });
 
-    const content = response.choices[0].message.content || '';
+    const content = response.choices[0].message.content || "";
     return this.parseReviewResponse(content, prDetails);
   }
 
@@ -91,7 +92,7 @@ export class OpenAIService {
 
   private parseReviewResponse(
     content: string,
-    prDetails: PRDetails
+    prDetails: PRDetails,
   ): {
     summary: string;
     critical: ReviewComment[];
@@ -100,7 +101,7 @@ export class OpenAIService {
     score: number;
   } {
     const sections = {
-      summary: '',
+      summary: "",
       critical: [] as ReviewComment[],
       warnings: [] as ReviewComment[],
       good: [] as string[],
@@ -114,17 +115,25 @@ export class OpenAIService {
     }
 
     // Extract critical issues
-    const criticalMatch = content.match(/🚨\s*CRITICAL[:\s]*(.*?)(?=⚠️|WARNINGS|$)/is);
+    const criticalMatch = content.match(
+      /🚨\s*CRITICAL[:\s]*(.*?)(?=⚠️|WARNINGS|$)/is,
+    );
     if (criticalMatch) {
       const items = this.extractListItems(criticalMatch[1]);
-      sections.critical = items.map((item) => this.parseCommentItem(item, 'critical', prDetails));
+      sections.critical = items.map((item) =>
+        this.parseCommentItem(item, "critical", prDetails),
+      );
     }
 
     // Extract warnings
-    const warningsMatch = content.match(/⚠️\s*WARNINGS[:\s]*(.*?)(?=✅|GOOD|$)/is);
+    const warningsMatch = content.match(
+      /⚠️\s*WARNINGS[:\s]*(.*?)(?=✅|GOOD|$)/is,
+    );
     if (warningsMatch) {
       const items = this.extractListItems(warningsMatch[1]);
-      sections.warnings = items.map((item) => this.parseCommentItem(item, 'major', prDetails));
+      sections.warnings = items.map((item) =>
+        this.parseCommentItem(item, "major", prDetails),
+      );
     }
 
     // Extract good points
@@ -144,19 +153,19 @@ export class OpenAIService {
 
   private extractListItems(text: string): string[] {
     const lines = text
-      .split('\n')
+      .split("\n")
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
 
     return lines
       .filter((line) => /^[-*•\d.]/.test(line))
-      .map((line) => line.replace(/^[-*•\d.]+\s*/, '').trim());
+      .map((line) => line.replace(/^[-*•\d.]+\s*/, "").trim());
   }
 
   private parseCommentItem(
     item: string,
-    severity: 'critical' | 'major',
-    prDetails: PRDetails
+    severity: "critical" | "major",
+    prDetails: PRDetails,
   ): ReviewComment {
     // Try to extract [FILE:LINE] format
     const fileLineMatch = item.match(/\[([^\]]+):(\d+)\]\s*(.*)/);
@@ -181,7 +190,7 @@ export class OpenAIService {
 
     // No file specified, use first file or general
     return {
-      file: prDetails.files[0]?.filename || 'general',
+      file: prDetails.files[0]?.filename || "general",
       body: item,
       severity,
     };

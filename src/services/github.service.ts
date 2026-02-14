@@ -1,5 +1,5 @@
-import { Octokit } from '@octokit/rest';
-import { PRDetails, PRFile } from '../types';
+import { Octokit } from "@octokit/rest";
+import { PRDetails, PRFile } from "../types";
 
 export class GitHubService {
   private octokit: Octokit;
@@ -8,7 +8,11 @@ export class GitHubService {
     this.octokit = new Octokit({ auth: token });
   }
 
-  async getPRDetails(owner: string, repo: string, prNumber: number): Promise<PRDetails> {
+  async getPRDetails(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<PRDetails> {
     const { data: pr } = await this.octokit.pulls.get({
       owner,
       repo,
@@ -33,8 +37,8 @@ export class GitHubService {
     return {
       number: pr.number,
       title: pr.title,
-      description: pr.body || '',
-      author: pr.user?.login || 'unknown',
+      description: pr.body || "",
+      author: pr.user?.login || "unknown",
       files: prFiles,
       baseBranch: pr.base.ref,
       headBranch: pr.head.ref,
@@ -45,7 +49,7 @@ export class GitHubService {
     owner: string,
     repo: string,
     prNumber: number,
-    comments: Array<{ body: string; path: string; line?: number }>
+    comments: Array<{ body: string; path: string; line?: number }>,
   ): Promise<void> {
     const { data: pr } = await this.octokit.pulls.get({
       owner,
@@ -66,19 +70,27 @@ export class GitHubService {
             line: comment.line,
           });
         } catch (error) {
-          console.error(`Failed to post comment on ${comment.path}:${comment.line}`, error);
+          console.error(
+            `Failed to post comment on ${comment.path}:${comment.line}`,
+            error,
+          );
         }
       }
     }
   }
 
-  async postReviewSummary(owner: string, repo: string, prNumber: number, summary: string): Promise<void> {
+  async postReviewSummary(
+    owner: string,
+    repo: string,
+    prNumber: number,
+    summary: string,
+  ): Promise<void> {
     await this.octokit.pulls.createReview({
       owner,
       repo,
       pull_number: prNumber,
       body: summary,
-      event: 'COMMENT',
+      event: "COMMENT",
     });
   }
 }

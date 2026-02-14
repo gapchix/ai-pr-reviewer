@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { ReviewReport } from '../types';
+import * as fs from "fs";
+import * as path from "path";
+import { ReviewReport } from "../types";
 
 export class FileFormatter {
   format(report: ReviewReport, outputPath: string): void {
@@ -11,7 +11,7 @@ export class FileFormatter {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    fs.writeFileSync(outputPath, content, 'utf-8');
+    fs.writeFileSync(outputPath, content, "utf-8");
     console.log(`Review report saved to: ${outputPath}`);
   }
 
@@ -20,7 +20,7 @@ export class FileFormatter {
     md += `**Repository:** ${report.repository}  \n`;
     md += `**PR Number:** #${report.prNumber}  \n`;
     md += `**Overall Score:** ${report.overallScore}/10  \n`;
-    md += `**Date:** ${new Date().toISOString().split('T')[0]}  \n\n`;
+    md += `**Date:** ${new Date().toISOString().split("T")[0]}  \n\n`;
 
     md += `---\n\n`;
 
@@ -34,7 +34,7 @@ export class FileFormatter {
     if (report.critical.length > 0) {
       md += `> **Must be fixed before merge**\n\n`;
       report.critical.forEach((issue, index) => {
-        md += `### ${index + 1}. \`${issue.file}${issue.line ? `:${issue.line}` : ''}\`\n\n`;
+        md += `### ${index + 1}. \`${issue.file}${issue.line ? `:${issue.line}` : ""}\`\n\n`;
         md += `${issue.body}\n\n`;
       });
     } else {
@@ -48,7 +48,7 @@ export class FileFormatter {
     if (report.warnings.length > 0) {
       md += `> **Should be addressed**\n\n`;
       report.warnings.forEach((warning, index) => {
-        md += `### ${index + 1}. \`${warning.file}${warning.line ? `:${warning.line}` : ''}\`\n\n`;
+        md += `### ${index + 1}. \`${warning.file}${warning.line ? `:${warning.line}` : ""}\`\n\n`;
         md += `${warning.body}\n\n`;
       });
     } else {
