@@ -4,7 +4,7 @@ import { ReviewReport } from '../types';
 export class ConsoleFormatter {
   format(report: ReviewReport): void {
     console.log('\n' + chalk.bold.cyan('═'.repeat(80)));
-    console.log(chalk.bold.cyan('  AI PR CODE REVIEW REPORT'));
+    console.log(chalk.bold.cyan('  🤖 AI PR CODE REVIEW REPORT'));
     console.log(chalk.bold.cyan('═'.repeat(80)) + '\n');
 
     console.log(chalk.bold('Repository:'), chalk.white(report.repository));
@@ -12,55 +12,58 @@ export class ConsoleFormatter {
     console.log(chalk.bold('Overall Score:'), this.formatScore(report.overallScore));
     console.log('');
 
-    console.log(chalk.bold.yellow('━'.repeat(80)));
-    console.log(chalk.bold.yellow('SUMMARY'));
-    console.log(chalk.bold.yellow('━'.repeat(80)));
+    // Summary
+    console.log(chalk.bold.blue('━'.repeat(80)));
+    console.log(chalk.bold.blue('📋 SUMMARY'));
+    console.log(chalk.bold.blue('━'.repeat(80)));
     console.log(chalk.white(report.summary));
     console.log('');
 
-    if (report.strengths.length > 0) {
-      console.log(chalk.bold.green('━'.repeat(80)));
-      console.log(chalk.bold.green('STRENGTHS'));
-      console.log(chalk.bold.green('━'.repeat(80)));
-      report.strengths.forEach((strength, index) => {
-        console.log(chalk.green(`  ✓ ${strength}`));
-      });
-      console.log('');
-    }
-
-    if (report.concerns.length > 0) {
+    // Critical Issues
+    if (report.critical.length > 0) {
       console.log(chalk.bold.red('━'.repeat(80)));
-      console.log(chalk.bold.red('CONCERNS'));
+      console.log(chalk.bold.red('🚨 CRITICAL ISSUES (Must fix before merge)'));
       console.log(chalk.bold.red('━'.repeat(80)));
-      report.concerns.forEach((concern, index) => {
-        console.log(chalk.red(`  ✗ ${concern}`));
-      });
-      console.log('');
-    }
-
-    if (report.recommendations.length > 0) {
-      console.log(chalk.bold.blue('━'.repeat(80)));
-      console.log(chalk.bold.blue('RECOMMENDATIONS'));
-      console.log(chalk.bold.blue('━'.repeat(80)));
-      report.recommendations.forEach((rec, index) => {
-        console.log(chalk.blue(`  → ${rec}`));
-      });
-      console.log('');
-    }
-
-    if (report.comments.length > 0) {
-      console.log(chalk.bold.magenta('━'.repeat(80)));
-      console.log(chalk.bold.magenta('DETAILED COMMENTS'));
-      console.log(chalk.bold.magenta('━'.repeat(80)));
-      report.comments.forEach((comment, index) => {
-        const severityColor = this.getSeverityColor(comment.severity);
-        console.log(severityColor(`  [${comment.severity.toUpperCase()}] ${comment.file}`));
-        console.log(chalk.white(`    ${comment.body}`));
-        if (comment.line) {
-          console.log(chalk.gray(`    Line: ${comment.line}`));
-        }
+      report.critical.forEach((issue, index) => {
+        console.log(chalk.red.bold(`  ${index + 1}. ${issue.file}${issue.line ? `:${issue.line}` : ''}`));
+        console.log(chalk.red(`     ${issue.body}`));
         console.log('');
       });
+    } else {
+      console.log(chalk.bold.green('━'.repeat(80)));
+      console.log(chalk.bold.green('🚨 CRITICAL ISSUES'));
+      console.log(chalk.bold.green('━'.repeat(80)));
+      console.log(chalk.green('  ✓ No critical issues found'));
+      console.log('');
+    }
+
+    // Warnings
+    if (report.warnings.length > 0) {
+      console.log(chalk.bold.yellow('━'.repeat(80)));
+      console.log(chalk.bold.yellow('⚠️  WARNINGS (Should be addressed)'));
+      console.log(chalk.bold.yellow('━'.repeat(80)));
+      report.warnings.forEach((warning, index) => {
+        console.log(chalk.yellow(`  ${index + 1}. ${warning.file}${warning.line ? `:${warning.line}` : ''}`));
+        console.log(chalk.white(`     ${warning.body}`));
+        console.log('');
+      });
+    } else {
+      console.log(chalk.bold.green('━'.repeat(80)));
+      console.log(chalk.bold.green('⚠️  WARNINGS'));
+      console.log(chalk.bold.green('━'.repeat(80)));
+      console.log(chalk.green('  ✓ No warnings found'));
+      console.log('');
+    }
+
+    // Good Points
+    if (report.good.length > 0) {
+      console.log(chalk.bold.green('━'.repeat(80)));
+      console.log(chalk.bold.green('✅ GOOD PRACTICES'));
+      console.log(chalk.bold.green('━'.repeat(80)));
+      report.good.forEach((item, index) => {
+        console.log(chalk.green(`  ✓ ${item}`));
+      });
+      console.log('');
     }
 
     console.log(chalk.bold.cyan('═'.repeat(80)) + '\n');

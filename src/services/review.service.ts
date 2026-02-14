@@ -18,10 +18,9 @@ export class ReviewService {
       repository: `${owner}/${repo}`,
       summary: review.summary,
       overallScore: review.score,
-      comments: review.comments,
-      strengths: review.strengths,
-      concerns: review.concerns,
-      recommendations: review.recommendations,
+      critical: review.critical,
+      warnings: review.warnings,
+      good: review.good,
     };
 
     return report;

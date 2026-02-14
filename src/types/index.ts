@@ -29,10 +29,9 @@ export interface ReviewReport {
   repository: string;
   summary: string;
   overallScore: number;
-  comments: ReviewComment[];
-  strengths: string[];
-  concerns: string[];
-  recommendations: string[];
+  critical: ReviewComment[];
+  warnings: ReviewComment[];
+  good: string[];
 }
 
 export interface CLIOptions {

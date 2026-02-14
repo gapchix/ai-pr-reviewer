@@ -10,27 +10,26 @@ export class OpenAIService {
 
   async reviewPR(prDetails: PRDetails): Promise<{
     summary: string;
-    comments: ReviewComment[];
-    strengths: string[];
-    concerns: string[];
-    recommendations: string[];
+    critical: ReviewComment[];
+    warnings: ReviewComment[];
+    good: string[];
     score: number;
   }> {
     const prompt = this.buildReviewPrompt(prDetails);
 
     const response = await this.client.chat.completions.create({
-      model: 'gpt-5.2',
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: 'You are an expert code reviewer. Provide thorough, constructive feedback on pull requests.',
+          content: 'You are a senior software engineer conducting a thorough code review. Focus on identifying critical issues, potential bugs, and highlighting good practices.',
         },
         {
           role: 'user',
           content: prompt,
         },
       ],
-      temperature: 0.3,
+      temperature: 0.2,
     });
 
     const content = response.choices[0].message.content || '';
@@ -38,27 +37,54 @@ export class OpenAIService {
   }
 
   private buildReviewPrompt(prDetails: PRDetails): string {
-    let prompt = `Review the following pull request:\n\n`;
+    let prompt = `Conduct a thorough code review for the following pull request.\n\n`;
     prompt += `Title: ${prDetails.title}\n`;
     prompt += `Description: ${prDetails.description}\n`;
-    prompt += `Author: ${prDetails.author}\n\n`;
-    prompt += `Files changed (${prDetails.files.length}):\n\n`;
+    prompt += `Author: ${prDetails.author}\n`;
+    prompt += `Base: ${prDetails.baseBranch} → Head: ${prDetails.headBranch}\n\n`;
+    prompt += `Files changed: ${prDetails.files.length}\n\n`;
 
     for (const file of prDetails.files) {
       prompt += `\n### File: ${file.filename}\n`;
-      prompt += `Status: ${file.status} (+${file.additions}/-${file.deletions})\n`;
+      prompt += `Status: ${file.status} | Changes: +${file.additions}/-${file.deletions}\n`;
       if (file.patch) {
         prompt += `\`\`\`diff\n${file.patch}\n\`\`\`\n`;
       }
     }
 
-    prompt += `\n\nProvide a comprehensive code review including:\n`;
-    prompt += `1. SUMMARY: Brief overview of the changes\n`;
-    prompt += `2. STRENGTHS: What's good about this PR (list 2-4 points)\n`;
-    prompt += `3. CONCERNS: Issues found (list with severity: critical/major/minor/suggestion)\n`;
-    prompt += `4. RECOMMENDATIONS: Actionable improvements\n`;
-    prompt += `5. SCORE: Rate from 1-10\n\n`;
-    prompt += `Format your response clearly with these sections.`;
+    prompt += `\n\n## Review Instructions\n\n`;
+    prompt += `Analyze this PR and provide feedback in the following structure:\n\n`;
+
+    prompt += `1. SUMMARY (2-3 sentences)\n`;
+    prompt += `   - Brief overview of what this PR accomplishes\n`;
+    prompt += `   - Overall assessment of code quality\n\n`;
+
+    prompt += `2. 🚨 CRITICAL (Must be fixed before merge)\n`;
+    prompt += `   - Security vulnerabilities\n`;
+    prompt += `   - Critical bugs or logic errors\n`;
+    prompt += `   - Breaking changes without proper migration\n`;
+    prompt += `   - Data loss risks\n`;
+    prompt += `   Format: "- [FILE:LINE] Description of critical issue"\n\n`;
+
+    prompt += `3. ⚠️ WARNINGS (Should be addressed)\n`;
+    prompt += `   - Potential bugs or edge cases\n`;
+    prompt += `   - Performance issues\n`;
+    prompt += `   - Code smells or anti-patterns\n`;
+    prompt += `   - Missing error handling\n`;
+    prompt += `   - Poor naming or unclear logic\n`;
+    prompt += `   Format: "- [FILE:LINE] Description of warning"\n\n`;
+
+    prompt += `4. ✅ GOOD (Positive aspects)\n`;
+    prompt += `   - Well-implemented features\n`;
+    prompt += `   - Good test coverage\n`;
+    prompt += `   - Clean code practices\n`;
+    prompt += `   - Proper documentation\n`;
+    prompt += `   Format: "- Description of what's good"\n\n`;
+
+    prompt += `5. SCORE (1-10)\n`;
+    prompt += `   - Rate the overall quality of this PR\n\n`;
+
+    prompt += `Be specific, actionable, and constructive. If a section has no items, write "None found."\n`;
 
     return prompt;
   }
@@ -68,52 +94,52 @@ export class OpenAIService {
     prDetails: PRDetails
   ): {
     summary: string;
-    comments: ReviewComment[];
-    strengths: string[];
-    concerns: string[];
-    recommendations: string[];
+    critical: ReviewComment[];
+    warnings: ReviewComment[];
+    good: string[];
     score: number;
   } {
     const sections = {
       summary: '',
-      strengths: [] as string[],
-      concerns: [] as string[],
-      recommendations: [] as string[],
+      critical: [] as ReviewComment[],
+      warnings: [] as ReviewComment[],
+      good: [] as string[],
       score: 7,
     };
 
-    const summaryMatch = content.match(/SUMMARY:?(.*?)(?=STRENGTHS:|$)/is);
+    // Extract summary
+    const summaryMatch = content.match(/SUMMARY[:\s]*(.*?)(?=🚨|CRITICAL|$)/is);
     if (summaryMatch) {
       sections.summary = summaryMatch[1].trim();
     }
 
-    const strengthsMatch = content.match(/STRENGTHS:?(.*?)(?=CONCERNS:|$)/is);
-    if (strengthsMatch) {
-      sections.strengths = this.extractListItems(strengthsMatch[1]);
+    // Extract critical issues
+    const criticalMatch = content.match(/🚨\s*CRITICAL[:\s]*(.*?)(?=⚠️|WARNINGS|$)/is);
+    if (criticalMatch) {
+      const items = this.extractListItems(criticalMatch[1]);
+      sections.critical = items.map((item) => this.parseCommentItem(item, 'critical', prDetails));
     }
 
-    const concernsMatch = content.match(/CONCERNS:?(.*?)(?=RECOMMENDATIONS:|$)/is);
-    if (concernsMatch) {
-      sections.concerns = this.extractListItems(concernsMatch[1]);
+    // Extract warnings
+    const warningsMatch = content.match(/⚠️\s*WARNINGS[:\s]*(.*?)(?=✅|GOOD|$)/is);
+    if (warningsMatch) {
+      const items = this.extractListItems(warningsMatch[1]);
+      sections.warnings = items.map((item) => this.parseCommentItem(item, 'major', prDetails));
     }
 
-    const recommendationsMatch = content.match(/RECOMMENDATIONS:?(.*?)(?=SCORE:|$)/is);
-    if (recommendationsMatch) {
-      sections.recommendations = this.extractListItems(recommendationsMatch[1]);
+    // Extract good points
+    const goodMatch = content.match(/✅\s*GOOD[:\s]*(.*?)(?=SCORE|$)/is);
+    if (goodMatch) {
+      sections.good = this.extractListItems(goodMatch[1]);
     }
 
-    const scoreMatch = content.match(/SCORE:?\s*(\d+)/i);
+    // Extract score
+    const scoreMatch = content.match(/SCORE[:\s]*(\d+)/i);
     if (scoreMatch) {
       sections.score = parseInt(scoreMatch[1], 10);
     }
 
-    const comments: ReviewComment[] = sections.concerns.map((concern) => ({
-      file: prDetails.files[0]?.filename || 'general',
-      body: concern,
-      severity: this.determineSeverity(concern),
-    }));
-
-    return { ...sections, comments };
+    return sections;
   }
 
   private extractListItems(text: string): string[] {
@@ -127,17 +153,37 @@ export class OpenAIService {
       .map((line) => line.replace(/^[-*•\d.]+\s*/, '').trim());
   }
 
-  private determineSeverity(concern: string): 'critical' | 'major' | 'minor' | 'suggestion' {
-    const lowerConcern = concern.toLowerCase();
-    if (lowerConcern.includes('critical') || lowerConcern.includes('security')) {
-      return 'critical';
+  private parseCommentItem(
+    item: string,
+    severity: 'critical' | 'major',
+    prDetails: PRDetails
+  ): ReviewComment {
+    // Try to extract [FILE:LINE] format
+    const fileLineMatch = item.match(/\[([^\]]+):(\d+)\]\s*(.*)/);
+    if (fileLineMatch) {
+      return {
+        file: fileLineMatch[1],
+        line: parseInt(fileLineMatch[2], 10),
+        body: fileLineMatch[3].trim(),
+        severity,
+      };
     }
-    if (lowerConcern.includes('major') || lowerConcern.includes('bug')) {
-      return 'major';
+
+    // Try to extract [FILE] format
+    const fileMatch = item.match(/\[([^\]]+)\]\s*(.*)/);
+    if (fileMatch) {
+      return {
+        file: fileMatch[1],
+        body: fileMatch[2].trim(),
+        severity,
+      };
     }
-    if (lowerConcern.includes('minor')) {
-      return 'minor';
-    }
-    return 'suggestion';
+
+    // No file specified, use first file or general
+    return {
+      file: prDetails.files[0]?.filename || 'general',
+      body: item,
+      severity,
+    };
   }
 }

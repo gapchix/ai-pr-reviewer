@@ -16,7 +16,7 @@ export class FileFormatter {
   }
 
   private buildMarkdownReport(report: ReviewReport): string {
-    let md = `# AI PR Code Review Report\n\n`;
+    let md = `# 🤖 AI PR Code Review Report\n\n`;
     md += `**Repository:** ${report.repository}  \n`;
     md += `**PR Number:** #${report.prNumber}  \n`;
     md += `**Overall Score:** ${report.overallScore}/10  \n`;
@@ -24,43 +24,48 @@ export class FileFormatter {
 
     md += `---\n\n`;
 
-    md += `## Summary\n\n`;
+    md += `## 📋 Summary\n\n`;
     md += `${report.summary}\n\n`;
 
-    if (report.strengths.length > 0) {
-      md += `## ✅ Strengths\n\n`;
-      report.strengths.forEach((strength) => {
-        md += `- ${strength}\n`;
+    md += `---\n\n`;
+
+    // Critical Issues
+    md += `## 🚨 Critical Issues\n\n`;
+    if (report.critical.length > 0) {
+      md += `> **Must be fixed before merge**\n\n`;
+      report.critical.forEach((issue, index) => {
+        md += `### ${index + 1}. \`${issue.file}${issue.line ? `:${issue.line}` : ''}\`\n\n`;
+        md += `${issue.body}\n\n`;
       });
-      md += `\n`;
+    } else {
+      md += `✅ No critical issues found\n\n`;
     }
 
-    if (report.concerns.length > 0) {
-      md += `## ⚠️ Concerns\n\n`;
-      report.concerns.forEach((concern) => {
-        md += `- ${concern}\n`;
+    md += `---\n\n`;
+
+    // Warnings
+    md += `## ⚠️ Warnings\n\n`;
+    if (report.warnings.length > 0) {
+      md += `> **Should be addressed**\n\n`;
+      report.warnings.forEach((warning, index) => {
+        md += `### ${index + 1}. \`${warning.file}${warning.line ? `:${warning.line}` : ''}\`\n\n`;
+        md += `${warning.body}\n\n`;
       });
-      md += `\n`;
+    } else {
+      md += `✅ No warnings found\n\n`;
     }
 
-    if (report.recommendations.length > 0) {
-      md += `## 💡 Recommendations\n\n`;
-      report.recommendations.forEach((rec) => {
-        md += `- ${rec}\n`;
+    md += `---\n\n`;
+
+    // Good Practices
+    md += `## ✅ Good Practices\n\n`;
+    if (report.good.length > 0) {
+      report.good.forEach((item) => {
+        md += `- ${item}\n`;
       });
       md += `\n`;
-    }
-
-    if (report.comments.length > 0) {
-      md += `## 📝 Detailed Comments\n\n`;
-      report.comments.forEach((comment, index) => {
-        md += `### ${index + 1}. ${comment.file}\n\n`;
-        md += `**Severity:** \`${comment.severity}\`  \n`;
-        if (comment.line) {
-          md += `**Line:** ${comment.line}  \n`;
-        }
-        md += `\n${comment.body}\n\n`;
-      });
+    } else {
+      md += `No specific highlights\n\n`;
     }
 
     md += `---\n\n`;
