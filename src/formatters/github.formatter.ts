@@ -1,14 +1,19 @@
-import { GitHubService } from '../services';
-import { ReviewReport } from '../types';
+import { GitHubService } from "../services";
+import { ReviewReport, PRDetails } from "../types";
 
 export class GitHubFormatter {
   constructor(private githubService: GitHubService) {}
 
-  async format(report: ReviewReport): Promise<void> {
-    const [owner, repo] = report.repository.split('/');
+  async format(report: ReviewReport, prDetails: PRDetails): Promise<void> {
+    const [owner, repo] = report.repository.split("/");
 
     const summaryComment = this.buildSummaryComment(report);
-    await this.githubService.postReviewSummary(owner, repo, report.prNumber, summaryComment);
+    await this.githubService.postReviewSummary(
+      owner,
+      repo,
+      report.prNumber,
+      summaryComment,
+    );
 
     const criticalComments = report.critical
       .filter((comment) => comment.line)
@@ -29,10 +34,16 @@ export class GitHubFormatter {
     const allComments = [...criticalComments, ...warningComments];
 
     if (allComments.length > 0) {
-      await this.githubService.postReviewComments(owner, repo, report.prNumber, allComments);
+      await this.githubService.postReviewComments(
+        owner,
+        repo,
+        report.prNumber,
+        allComments,
+        prDetails,
+      );
     }
 
-    console.log('Review comments posted to GitHub PR');
+    console.log("✓ Review comments posted to GitHub PR");
   }
 
   private buildSummaryComment(report: ReviewReport): string {
@@ -46,7 +57,7 @@ export class GitHubFormatter {
     if (report.critical.length > 0) {
       comment += `> **Must be fixed before merge**\n\n`;
       report.critical.forEach((issue, index) => {
-        comment += `${index + 1}. **\`${issue.file}${issue.line ? `:${issue.line}` : ''}\`** - ${issue.body}\n`;
+        comment += `${index + 1}. **\`${issue.file}${issue.line ? `:${issue.line}` : ""}\`** - ${issue.body}\n`;
       });
       comment += `\n`;
     } else {
@@ -58,7 +69,7 @@ export class GitHubFormatter {
     if (report.warnings.length > 0) {
       comment += `> **Should be addressed**\n\n`;
       report.warnings.forEach((warning, index) => {
-        comment += `${index + 1}. **\`${warning.file}${warning.line ? `:${warning.line}` : ''}\`** - ${warning.body}\n`;
+        comment += `${index + 1}. **\`${warning.file}${warning.line ? `:${warning.line}` : ""}\`** - ${warning.body}\n`;
       });
       comment += `\n`;
     } else {

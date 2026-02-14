@@ -1,0 +1,17 @@
+node_modules
+
+# Build output
+dist
+
+# JavaScript files (we only lint TypeScript)
+*.js
+
+# TypeScript declaration files
+*.d.ts
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
