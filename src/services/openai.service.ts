@@ -17,24 +17,35 @@ export class OpenAIService {
   }> {
     const prompt = this.buildReviewPrompt(prDetails);
 
-    const response = await this.client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a senior software engineer conducting a thorough code review. Focus on identifying critical issues, potential bugs, and highlighting good practices.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.2,
-    });
+    try {
+      const response = await this.client.chat.completions.create({
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a senior software engineer conducting a thorough code review. Focus on identifying critical issues, potential bugs, and highlighting good practices.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.2,
+      });
 
-    const content = response.choices[0].message.content || "";
-    return this.parseReviewResponse(content, prDetails);
+      const content = response.choices[0]?.message?.content || "";
+      if (!content) {
+        throw new Error("OpenAI returned empty response");
+      }
+
+      return this.parseReviewResponse(content, prDetails);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`OpenAI API error: ${error.message}`);
+      }
+      throw new Error("Unknown error occurred while calling OpenAI API");
+    }
   }
 
   private buildReviewPrompt(prDetails: PRDetails): string {

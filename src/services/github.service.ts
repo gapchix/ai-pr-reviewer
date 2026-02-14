@@ -118,10 +118,14 @@ export class GitHubService {
           });
           commentsPosted.push(`${comment.path}:${comment.line}`);
         } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
           commentsFailed.push(`${comment.path}:${comment.line}`);
           console.warn(
-            `⚠️  Could not post comment on ${comment.path}:${comment.line} (line may not exist in diff)`,
+            `⚠️  Failed to post comment on ${comment.path}:${comment.line}`,
           );
+          console.warn(`   Reason: ${errorMessage}`);
+          console.warn(`   Comment body: ${comment.body.substring(0, 100)}...`);
         }
       }
     }

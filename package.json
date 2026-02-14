@@ -8,11 +8,11 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node src/index.ts",
+    "dev:run": "ts-node src/index.ts",
     "review": "ts-node src/index.ts",
     "start": "node dist/index.js",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\"",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix"
   },
