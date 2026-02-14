@@ -1,0 +1,40 @@
+{
+  "name": "ai-pr-reviewer",
+  "version": "1.0.0",
+  "description": "AI-powered GitHub PR code reviewer CLI",
+  "main": "dist/index.js",
+  "bin": {
+    "ai-pr-review": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev:run": "ts-node src/index.ts",
+    "review": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix"
+  },
+  "keywords": ["cli", "code-review", "github", "openai", "ai"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "commander": "^11.1.0",
+    "openai": "^4.20.1",
+    "dotenv": "^16.3.1",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-node": "^11.1.0",
+    "prettier": "^3.1.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.2"
+  }
+}
